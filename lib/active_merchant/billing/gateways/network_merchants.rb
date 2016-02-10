@@ -208,7 +208,7 @@ module ActiveMerchant #:nodoc:
           :avs_result => { :code => response['avsresponse']},
           :cvv_result => response['cvvresponse'],
 
-          gateway_request: "#{URL}#{gateway_request}",
+          gateway_request: "#{self.live_url}#{gateway_request}",
           gateway_response: raw_response,
           standard_response: response[:response],
           gateway_reason_code: response[:response_code],
