@@ -7,7 +7,8 @@ module ActiveMerchant #:nodoc:
       self.supported_cardtypes = [:visa, :master, :american_express, :discover]
 
       self.homepage_url = 'http://www.nmi.com/'
-      self.display_name = 'Network Merchants (NMI)'
+      self.display_name = 'Network Merchants'
+      self.abbreviation = 'NMI'
 
       self.money_format = :dollars
       self.default_currency = 'USD'
