@@ -48,6 +48,7 @@ require 'active_merchant/connection'
 require 'active_merchant/post_data'
 require 'active_merchant/posts_data'
 
+require 'active_merchant/billing/model'
 require 'active_merchant/billing'
 require 'active_merchant/version'
 require 'active_merchant/country'
