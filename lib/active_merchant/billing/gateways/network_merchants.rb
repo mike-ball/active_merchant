@@ -195,17 +195,18 @@ module ActiveMerchant #:nodoc:
       end
 
       def commit(action, parameters)
-        raw = parse(ssl_post(self.live_url, build_request(action, parameters)))
+        raw_response = ssl_post(self.live_url, build_request(action, parameters))
+        response = parse(raw_response)
 
-        success = (raw['response'] == ResponseCodes::APPROVED)
+        success = (response['response'] == ResponseCodes::APPROVED)
 
-        authorization = authorization_from(success, parameters, raw)
+        authorization = authorization_from(success, parameters, response)
 
-        Response.new(success, raw['responsetext'], raw,
+        Response.new(success, response['responsetext'], response,
           :test => test?,
           :authorization => authorization,
-          :avs_result => { :code => raw['avsresponse']},
-          :cvv_result => raw['cvvresponse'],
+          :avs_result => { :code => response['avsresponse']},
+          :cvv_result => response['cvvresponse'],
 
           gateway_request: "#{URL}#{gateway_request}",
           gateway_response: raw_response,
