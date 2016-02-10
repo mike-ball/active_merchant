@@ -6,6 +6,9 @@ module ActiveMerchant #:nodoc:
     class Response
       attr_reader :params, :message, :test, :authorization, :avs_result, :cvv_result, :error_code, :emv_authorization
 
+      # standard payment attributes
+      attr_reader :gateway_request, :gateway_response, :gateway_reason_code, :standard_response, :transaction_id, :gateway_message
+      
       def success?
         @success
       end
@@ -36,6 +39,25 @@ module ActiveMerchant #:nodoc:
           options[:cvv_result].to_hash
         else
           CVVResult.new(options[:cvv_result]).to_hash
+        end
+        
+        # payment object expects these standards
+        @gateway_request      = options[:gateway_request]
+        @gateway_response     = options[:gateway_response]
+        @gateway_reason_code  = options[:gateway_reason_code]
+        @standard_response    = options[:standard_response]   # 1, 2, or 3
+        @transaction_id       = options[:transaction_id]
+        @gateway_message      = options[:gateway_message]
+        
+        # message and gateway_message should never be a blank string
+        @message = nil if @message.blank?
+        @gateway_message = nil if @gateway_message.blank?
+        
+        if success? and @gateway_reason_code.blank?
+          @gateway_reason_code  = '100'
+          @standard_response    = 1
+          @message              = 'SUCCESS'
+          @gateway_message      = 'SUCCESS'
         end
       end
     end
