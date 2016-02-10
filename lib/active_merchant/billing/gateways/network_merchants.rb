@@ -1,6 +1,6 @@
 module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
-    class NetworkMerchants < Gateway
+    class NetworkMerchantsGateway < Gateway
       self.live_url = self.test_url = 'https://secure.networkmerchants.com/api/transact.php'
 
       self.supported_countries = ['US']
