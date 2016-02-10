@@ -9,6 +9,9 @@ module ActiveMerchant #:nodoc:
       # standard payment attributes
       attr_reader :gateway_request, :gateway_response, :gateway_reason_code, :standard_response, :transaction_id, :gateway_message
       
+      # Evoke 360 fields
+      attr_reader :ma_record, :ma_trans
+      
       def success?
         @success
       end
@@ -52,6 +55,10 @@ module ActiveMerchant #:nodoc:
         # message and gateway_message should never be a blank string
         @message = nil if @message.blank?
         @gateway_message = nil if @gateway_message.blank?
+        
+        # special fields used by Evoke 360 accounts
+        @ma_record  = options[:ma_record]
+        @ma_trans   = options[:ma_trans]
         
         if success? and @gateway_reason_code.blank?
           @gateway_reason_code  = '100'
