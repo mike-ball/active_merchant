@@ -57,7 +57,7 @@ module ActiveMerchant #:nodoc:
       end
 
       self.require_name = true
-      self.require_verification_value = true
+      self.require_verification_value = false
 
       # Returns or sets the credit card number.
       #
