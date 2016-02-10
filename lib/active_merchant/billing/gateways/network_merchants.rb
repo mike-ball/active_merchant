@@ -195,7 +195,8 @@ module ActiveMerchant #:nodoc:
       end
 
       def commit(action, parameters)
-        raw_response = ssl_post(self.live_url, build_request(action, parameters))
+        gateway_request = build_request(action, parameters)
+        raw_response = ssl_post(self.live_url, gateway_request)
         response = parse(raw_response)
 
         success = (response['response'] == ResponseCodes::APPROVED)
