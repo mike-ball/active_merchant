@@ -205,16 +205,17 @@ module ActiveMerchant #:nodoc:
 
         Response.new(success, response['responsetext'], response,
           :test => test?,
-          :authorization => authorization,
+          # :authorization => authorization,
           :avs_result => { :code => response['avsresponse']},
           :cvv_result => response['cvvresponse'],
 
-          gateway_request: "#{self.live_url}#{gateway_request}",
-          gateway_response: raw_response,
-          standard_response: response['response'],
-          gateway_reason_code: response['response_code'],
-          transaction_id: response['transactionid'],
-          gateway_message: response['response_code_message']
+          gateway_request:      "#{self.live_url}#{gateway_request}",
+          gateway_response:     raw_response,
+          standard_response:    response['response'],
+          gateway_reason_code:  response['response_code'],
+          transaction_id:       response['transactionid'],
+          gateway_message:      response['response_code_message'],
+          authorization:        response['authcode']
         )
       end
 
