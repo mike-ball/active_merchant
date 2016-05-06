@@ -53,7 +53,20 @@ module ActiveMerchant #:nodoc:
         commit_vault('delete_customer', post)
       end
 
+      def query(parameters)
+        gateway_request = build_request(nil, parameters)
+        raw_response = ssl_post(query_url, gateway_request)
+        parse_xml(raw_response)
+      end
+
       private
+
+      def query_url
+        return @query_url if @query_url
+        url = self.live_url.split('/').reverse
+        url[0] = 'query.php'
+        @query_url = url.reverse.join('/')
+      end
 
       def build_auth_post(money, creditcard_or_vault_id, options)
         post = {}
@@ -247,6 +260,14 @@ module ActiveMerchant #:nodoc:
         rsp.keys.each { |k| rsp[k] = rsp[k].first } # flatten out the values
         rsp
       end
+
+      def parse_xml(xml_response)
+        hash = Hash.from_xml(xml_response).with_indifferent_access
+        hash = hash[:nm_response]
+        hash = hash[:transaction] if hash.size == 1 && hash[:transaction]
+        return hash
+      end
+
     end
   end
 end
