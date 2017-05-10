@@ -146,14 +146,16 @@ module ActiveMerchant #:nodoc:
         post[:metadata] = options[:metadata] if options[:metadata]
         post[:expand] = [:charge]
 
-        MultiResponse.run(:first) do |r|
-          r.process { commit(:post, "charges/#{CGI.escape(identification)}/refunds", post, options) }
+        commit(:post, "charges/#{CGI.escape(identification)}/refunds", post, options)
+        # Commenting out MultiResponse because it does not work with Hal
+        # MultiResponse.run(:first) do |r|
+        #   r.process { commit(:post, "charges/#{CGI.escape(identification)}/refunds", post, options) }
 
-          return r unless options[:refund_fee_amount]
+        #   return r unless options[:refund_fee_amount]
 
-          r.process { fetch_application_fees(identification, options) }
-          r.process { refund_application_fee(options[:refund_fee_amount], application_fee_from_response(r.responses.last), options) }
-        end
+        #   r.process { fetch_application_fees(identification, options) }
+        #   r.process { refund_application_fee(options[:refund_fee_amount], application_fee_from_response(r.responses.last), options) }
+        # end
       end
 
       def verify(payment, options = {})
@@ -504,30 +506,305 @@ module ActiveMerchant #:nodoc:
         rescue JSON::ParserError
           response = json_error(raw_response)
         end
-        response
+        response.with_indifferent_access
       end
 
       def commit(method, url, parameters = nil, options = {})
         add_expand_parameters(parameters, options) if parameters
         response = api_request(method, url, parameters, options)
+        ActiveMerchant.logger.debug "============================="
+        ActiveMerchant.logger.debug response.inspect
+        ActiveMerchant.logger.debug "============================="
+        ActiveMerchant.logger.debug "Done with ActiveMerchant logging"
 
-        success = !response.key?("error")
+        success = !response.key?(:error)
 
         card = card_from_response(response)
         avs_code = AVS_CODE_TRANSLATOR["line1: #{card["address_line1_check"]}, zip: #{card["address_zip_check"]}"]
         cvc_code = CVC_CODE_TRANSLATOR[card["cvc_check"]]
 
         Response.new(success,
-          success ? "Transaction approved" : response["error"]["message"],
+          success ? "Transaction approved" : response[:error][:message],
           response,
-          :test => response_is_test?(response),
-          :authorization => authorization_from(success, url, method, response),
-          :avs_result => { :code => avs_code },
-          :cvv_result => cvc_code,
-          :emv_authorization => emv_authorization_from_response(response),
-          :error_code => success ? nil : error_code_from(response)
+          {
+            test:               response_is_test?(response),
+            authorization:      authorization_from(success, url, method, response),
+            avs_result:         { code: avs_code },
+            cvv_result:         cvc_code,
+            emv_authorization:  emv_authorization_from_response(response),
+            error_code:         success ? nil : error_code_from(response)
+          }.merge(standard_response_values(success, response))
         )
       end
+
+      def standard_response_values(success, response)
+        if success
+          transaction_id = response[:id]
+          standard_response = 1
+          gateway_reason_code = response[:outcome][:type]           rescue response[:status]
+          gateway_message     = response[:outcome][:seller_message] rescue response[:status]
+          gateway_display_message = 'Approved'
+        else
+          transaction_id = response[:error][:charge]
+          gateway_reason_code = response[:error][:decline_code] ||
+                                response[:error][:code] ||
+                                response[:error][:type]
+          gateway_message     = response[:error][:code] ||
+                                gateway_reason_code
+          gateway_display_message = response[:error][:message]
+          standard_response = 2
+          case gateway_reason_code
+          when 'invalid_request_error', 'processing_error'
+            standard_response = 3
+          end
+        end
+
+        {
+          gateway_request:      nil,
+          gateway_response:     response,
+          standard_response:    standard_response,
+          gateway_reason_code:  gateway_reason_code,
+          transaction_id:       transaction_id,
+          gateway_message:      gateway_message,
+          gateway_display_message: gateway_display_message
+        }
+      end
+
+      #temp example error response\
+# {
+#     "error" => {
+#              "message" => "Your card was declined.",
+#                 "type" => "card_error",
+#                 "code" => "card_declined",
+#         "decline_code" => "generic_decline",
+#               "charge" => "ch_1AHebMAGZIXEopwjwWeUd8Py"
+#     }
+# }
+
+# {
+#     "error" => {
+#            "type" => "invalid_request_error",
+#         "message" => "Charge ch_1AHf8BAGZIXEopwjc6SsZv1O has been charged back; cannot issue a refund."
+#     }
+# }
+
+# {
+#     "error" => {
+#              "message" => "Your card was declined. Your request was in test mode, but used a non test card. For a list of valid test cards, visit: https://stripe.com/docs/testing.",
+#                 "type" => "card_error",
+#                 "code" => "card_declined",
+#         "decline_code" => "test_mode_live_card",
+#               "charge" => "ch_1AGEITAGZIXEopwj7PcS1KZ3"
+#     }
+# }
+
+# {
+#     "error" => {
+#              "message" => "Your card was declined. Your request was in live mode, but used a known test card.",
+#                 "type" => "card_error",
+#                 "code" => "card_declined",
+#         "decline_code" => "live_mode_test_card",
+#               "charge" => "ch_1AHDi0AGZIXEopwjq41OYgUd"
+#     }
+# }
+
+# {
+#     "error" => {
+#            "type" => "invalid_request_error",
+#         "message" => "This API call cannot be made with a publishable API key. Please use a secret API key. You can find a list of your API keys at https://dashboard.stripe.com/account/apikeys."
+#     }
+# }
+
+# {
+#     "error" => {
+#         "message" => "Your card's security code is incorrect.",
+#            "type" => "card_error",
+#           "param" => "cvc",
+#            "code" => "incorrect_cvc",
+#          "charge" => "ch_1AHeMUAGZIXEopwjgQ0JpPPl"
+#     }
+# }
+
+      # example approved response
+# {
+#                       "id" => "ch_1AGEgOAGZIXEopwjkAgBRlQs",
+#                   "object" => "charge",
+#                   "amount" => 50,
+#          "amount_refunded" => 0,
+#              "application" => nil,
+#          "application_fee" => nil,
+#      "balance_transaction" => "txn_1AGEgOAGZIXEopwjwzZhvJ3S",
+#                 "captured" => true,
+#                  "created" => 1494022432,
+#                 "currency" => "usd",
+#                 "customer" => nil,
+#              "description" => "Test Transaction",
+#              "destination" => nil,
+#                  "dispute" => nil,
+#             "failure_code" => nil,
+#          "failure_message" => nil,
+#            "fraud_details" => {},
+#                  "invoice" => nil,
+#                 "livemode" => false,
+#                 "metadata" => {
+#         "email" => "mike@logiql.com"
+#     },
+#             "on_behalf_of" => nil,
+#                    "order" => nil,
+#                  "outcome" => {
+              #         "network_status" => "approved_by_network",
+              #                 "reason" => nil,
+              #             "risk_level" => "normal",
+              #         "seller_message" => "Payment complete.",
+              #                   "type" => "authorized"
+              #     },
+#                     "paid" => true,
+#            "receipt_email" => nil,
+#           "receipt_number" => nil,
+#                 "refunded" => false,
+#                  "refunds" => {
+#              "object" => "list",
+#                "data" => [],
+#            "has_more" => false,
+#         "total_count" => 0,
+#                 "url" => "/v1/charges/ch_1AGEgOAGZIXEopwjkAgBRlQs/refunds"
+#     },
+#                   "review" => nil,
+#                 "shipping" => nil,
+#                   "source" => {
+#                          "id" => "card_1AGEgOAGZIXEopwjqXUuUcr3",
+#                      "object" => "card",
+#                "address_city" => nil,
+#             "address_country" => nil,
+#               "address_line1" => nil,
+#         "address_line1_check" => nil,
+#               "address_line2" => nil,
+#               "address_state" => nil,
+#                 "address_zip" => nil,
+#           "address_zip_check" => nil,
+#                       "brand" => "Visa",
+#                     "country" => "US",
+#                    "customer" => nil,
+#                   "cvc_check" => nil,
+#               "dynamic_last4" => nil,
+#                   "exp_month" => 1,
+#                    "exp_year" => 2018,
+#                 "fingerprint" => "QKXcj04OSzqU3RK2",
+#                     "funding" => "credit",
+#                       "last4" => "4242",
+#                    "metadata" => {},
+#                        "name" => "Mike Ball",
+#         "tokenization_method" => nil
+#     },
+#          "source_transfer" => nil,
+#     "statement_descriptor" => nil,
+#                   "status" => "succeeded",
+#           "transfer_group" => nil
+# }
+
+# {
+#                       "id" => "ch_1AHedVAGZIXEopwjf89sWg1Z",
+#                   "object" => "charge",
+#                   "amount" => 50,
+#          "amount_refunded" => 0,
+#              "application" => nil,
+#          "application_fee" => nil,
+#      "balance_transaction" => "txn_1AHedVAGZIXEopwj2HdHRqOl",
+#                 "captured" => true,
+#                  "created" => 1494360525,
+#                 "currency" => "usd",
+#                 "customer" => nil,
+#              "description" => "Test Transaction",
+#              "destination" => nil,
+#                  "dispute" => nil,
+#             "failure_code" => nil,
+#          "failure_message" => nil,
+#            "fraud_details" => {},
+#                  "invoice" => nil,
+#                 "livemode" => false,
+#                 "metadata" => {
+#         "email" => "mike@logiql.com"
+#     },
+#             "on_behalf_of" => nil,
+#                    "order" => nil,
+#                  "outcome" => {
+              #         "network_status" => "approved_by_network",
+              #                 "reason" => "elevated_risk_level",
+              #             "risk_level" => "elevated",
+              #         "seller_message" => "Stripe evaluated this charge as having elevated risk,\n  and placed it in your manual review queue.",
+              #                   "type" => "manual_review"
+              #     },
+#                     "paid" => true,
+#            "receipt_email" => nil,
+#           "receipt_number" => nil,
+#                 "refunded" => false,
+#                  "refunds" => {
+#              "object" => "list",
+#                "data" => [],
+#            "has_more" => false,
+#         "total_count" => 0,
+#                 "url" => "/v1/charges/ch_1AHedVAGZIXEopwjf89sWg1Z/refunds"
+#     },
+#                   "review" => "prv_1AHedVAGZIXEopwjhQ5rdwrj",
+#                 "shipping" => nil,
+#                   "source" => {
+#                          "id" => "card_1AHedVAGZIXEopwjmX1cWBzb",
+#                      "object" => "card",
+#                "address_city" => nil,
+#             "address_country" => nil,
+#               "address_line1" => nil,
+#         "address_line1_check" => nil,
+#               "address_line2" => nil,
+#               "address_state" => nil,
+#                 "address_zip" => nil,
+#           "address_zip_check" => nil,
+#                       "brand" => "Visa",
+#                     "country" => "US",
+#                    "customer" => nil,
+#                   "cvc_check" => nil,
+#               "dynamic_last4" => nil,
+#                   "exp_month" => 1,
+#                    "exp_year" => 2018,
+#                 "fingerprint" => "uOydkCh4vaT0MyXD",
+#                     "funding" => "credit",
+#                       "last4" => "9235",
+#                    "metadata" => {},
+#                        "name" => "Mike Ball",
+#         "tokenization_method" => nil
+#     },
+#          "source_transfer" => nil,
+#     "statement_descriptor" => nil,
+#                   "status" => "succeeded",
+#           "transfer_group" => nil
+# }
+
+
+
+      # # remove this. it is a template from network_merchants
+      # def commit(action, parameters)
+      #   gateway_request = build_request(action, parameters)
+      #   raw_response = ssl_post(self.live_url, gateway_request)
+      #   response = parse(raw_response)
+
+      #   success = (response['response'] == ResponseCodes::APPROVED)
+
+      #   authorization = authorization_from(success, parameters, response)
+
+      #   Response.new(success, response['responsetext'], response,
+      #     :test => test?,
+      #     # :authorization => authorization,
+      #     :avs_result => { :code => response['avsresponse']},
+      #     :cvv_result => response['cvvresponse'],
+
+      #     gateway_request:      "#{self.live_url}#{gateway_request}",
+      #     gateway_response:     raw_response,
+      #     standard_response:    response['response'],
+      #     gateway_reason_code:  response['response_code'],
+      #     transaction_id:       response['transactionid'],
+      #     gateway_message:      response['response_code_message'],
+      #     authorization:        response['authcode']
+      #   )
+      # end
 
       def authorization_from(success, url, method, response)
         return response["error"]["charge"] unless success
