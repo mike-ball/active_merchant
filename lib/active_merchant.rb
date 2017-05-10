@@ -62,6 +62,14 @@ module ActiveMerchant
       warn(warning)
     end
   end
+
+  def self.logger
+    @@logger ||= defined?(Rails) ? Rails.logger : Logger.new(STDOUT)
+  end
+
+  def self.logger=(logger)
+    @@logger = logger
+  end
 end
 
 I18n.enforce_available_locales = false
