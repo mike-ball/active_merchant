@@ -543,6 +543,12 @@ module ActiveMerchant #:nodoc:
           standard_response = 1
           gateway_reason_code = response[:outcome][:type]           rescue response[:status]
           gateway_message     = response[:outcome][:seller_message] rescue response[:status]
+
+          # use the risk_level as the reason_code if it is not 'normal'
+          if response[:outcome] && response[:outcome][:risk_level] != 'normal'
+            gateway_reason_code = response[:outcome][:reason] || "#{response[:outcome][:risk_level]}_risk_level"
+          end
+
           gateway_display_message = 'Approved'
         else
           transaction_id = response[:error][:charge]
