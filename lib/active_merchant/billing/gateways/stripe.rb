@@ -29,7 +29,7 @@ module ActiveMerchant #:nodoc:
 
       self.homepage_url = 'https://stripe.com/'
       self.display_name = 'Stripe'
-      self.abbreviation = 'STRI'
+      self.abbreviation = 'Stripe'
 
       STANDARD_ERROR_CODE_MAPPING = {
         'incorrect_number' => STANDARD_ERROR_CODE[:incorrect_number],

@@ -32,6 +32,7 @@ module ActiveMerchant #:nodoc:
       self.supported_countries = ['US']
       self.homepage_url = 'https://www.paypal.com/cgi-bin/webscr?cmd=xpt/merchant/ExpressCheckoutIntro-outside'
       self.display_name = 'PayPal Express Checkout'
+      self.abbreviation = 'PayPal Express'
 
       def setup_authorization(money, options = {})
         requires!(options, :return_url, :cancel_return_url)
