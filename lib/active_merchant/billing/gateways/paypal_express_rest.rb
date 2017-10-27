@@ -1,14 +1,11 @@
-require 'active_merchant/billing/gateways/paypal/paypal_common_api'
-require 'active_merchant/billing/gateways/paypal/paypal_express_response'
-require 'active_merchant/billing/gateways/paypal/paypal_recurring_api'
-require 'active_merchant/billing/gateways/paypal_express_common'
+# this file was originaly copied from paypal_express.rb
+# It is intended to change all of the methods to use the PayPal REST API and PayPal-Ruby-SDK gem
+# https://github.com/paypal/PayPal-Ruby-SDK
+# It has a long way to go
 
 module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
-    class PaypalExpressGateway < Gateway
-      include PaypalCommonAPI
-      include PaypalExpressCommon
-      include PaypalRecurringApi
+    class PaypalExpressRestGateway < Gateway
 
       NON_STANDARD_LOCALE_CODES = {
         'DK' => 'da_DK',
@@ -28,10 +25,10 @@ module ActiveMerchant #:nodoc:
 
       CURRENCIES_WITHOUT_FRACTIONS = %w(HUF JPY TWD)
 
-      self.test_redirect_url = 'https://www.sandbox.paypal.com/cgi-bin/webscr'
-      self.supported_countries = ['US']
-      self.homepage_url = 'https://www.paypal.com/cgi-bin/webscr?cmd=xpt/merchant/ExpressCheckoutIntro-outside'
-      self.display_name = 'PayPal Express Checkout'
+      self.supported_countries = %w(AT AU BE BR CA CH DE DK ES FI FR GB HK IE IT JP LU MX NL NO NZ PT SE SG US)
+      self.homepage_url = 'https://developer.paypal.com/docs/api/'
+      self.display_name = 'PayPal Express'
+      self.abbreviation = 'PP Exp'
 
       def setup_authorization(money, options = {})
         requires!(options, :return_url, :cancel_return_url)
