@@ -12,6 +12,7 @@ module ActiveMerchant #:nodoc:
 
       self.homepage_url = 'https://webpay.jp/'
       self.display_name = 'WebPay'
+      self.abbreviation = nil
 
       def capture(money, authorization, options = {})
         post = {}
