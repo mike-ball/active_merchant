@@ -48,6 +48,21 @@ module ActiveMerchant #:nodoc:
         response_from_refund(refund)
       end
 
+      def suspend_recurring(agreement_id)
+        agreement = PayPal::SDK::REST::Agreement.find(agreement_id)
+        agreement.suspend(note: "Suspending the agreement")
+      end
+
+      def activate_recurring(agreement_id)
+        agreement = PayPal::SDK::REST::Agreement.find(agreement_id)
+        agreement.re_activate(note: "Re-activating the agreement")
+      end
+
+      def cancel_recurring(agreement_id)
+        agreement = PayPal::SDK::REST::Agreement.find(agreement_id)
+        agreement.cancel(note: "Canceling the agreement")
+      end
+
       private
 
         def paypal_rest_set_config(options)
