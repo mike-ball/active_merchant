@@ -63,6 +63,12 @@ module ActiveMerchant #:nodoc:
         agreement.cancel(note: "Canceling the agreement")
       end
 
+      def agreement_next_bill_date(agreement_id)
+        agreement = PayPal::SDK::REST::Agreement.find(agreement_id)
+        next_bill_date = Time.parse(agreement.agreement_details.next_billing_date) rescue nil
+        next_bill_date
+      end
+
       private
 
         def paypal_rest_set_config(options)
