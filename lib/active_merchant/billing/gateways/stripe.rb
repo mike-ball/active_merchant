@@ -512,10 +512,10 @@ module ActiveMerchant #:nodoc:
       def commit(method, url, parameters = nil, options = {})
         add_expand_parameters(parameters, options) if parameters
         response = api_request(method, url, parameters, options)
-        ActiveMerchant.logger.debug "============================="
-        ActiveMerchant.logger.debug response.inspect
-        ActiveMerchant.logger.debug "============================="
-        ActiveMerchant.logger.debug "Done with ActiveMerchant logging"
+        # ActiveMerchant.logger.debug "============================="
+        # ActiveMerchant.logger.debug response.inspect
+        # ActiveMerchant.logger.debug "============================="
+        # ActiveMerchant.logger.debug "Done with ActiveMerchant logging"
 
         success = !response.key?(:error)
 
