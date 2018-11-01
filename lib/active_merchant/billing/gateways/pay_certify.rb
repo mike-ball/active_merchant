@@ -3,8 +3,8 @@ module ActiveMerchant #:nodoc:
     class PayCertifyGateway < Gateway
       # documentation: https://paycertify.github.io/help-center/gateway/
 
-      self.live_url = 'https://qa-gateway-api.paycertify.com/api/transactions'
-
+      self.live_url = 'https://gateway-api.paycertify.com/api/transactions'
+      self.test_url = 'https://qa-gateway-api.paycertify.com/api/transactions'
 
       self.supported_countries = ['US']
       self.supported_cardtypes = [:visa, :master, :american_express, :discover, :jcb, :diners_club, :maestro]
@@ -173,7 +173,7 @@ module ActiveMerchant #:nodoc:
         end
 
         def url(action, transaction_id)
-          temp_url = live_url
+          temp_url = (test? ? test_url : live_url)
           temp_url += "/#{transaction_id}" if transaction_id.present?
           temp_url + "/" + ACTIONS[action]
         end
