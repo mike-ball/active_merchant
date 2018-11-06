@@ -92,7 +92,13 @@ module ActiveMerchant #:nodoc:
             post[:state]    = address[:state_code]
             post[:country]  = address[:country_code]
             post[:zip]      = address[:zip]
-            # post[:mobile_phone] = address[:phone] # only send the phone if it's E.164 format (begins with country code)
+            post[:mobile_phone] = address[:phone]
+            if calling_code = address[:country_calling_code].presence
+              phone_prefix = '+' + calling_code
+              if post[:mobile_phone].present? && !post[:mobile_phone].starts_with?(phone_prefix)
+                post[:mobile_phone] = phone_prefix + post[:mobile_phone]
+              end
+            end
           end
         end
 
