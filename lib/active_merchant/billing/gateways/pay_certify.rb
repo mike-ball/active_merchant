@@ -86,6 +86,7 @@ module ActiveMerchant #:nodoc:
           if address = options[:billing_address] || options[:address]
             post[:first_name] = options[:first_name]
             post[:last_name]  = options[:last_name]
+            post[:ip_address] = options[:ip_address]
             post[:street_address_1] = address[:address1]
             post[:street_address_2] = address[:address2]
             post[:city]     = address[:city]
