@@ -7,7 +7,8 @@ module ActiveMerchant #:nodoc:
       self.test_url = 'https://qa-gateway-api.paycertify.com/api/transactions'
 
       self.supported_countries = ['US']
-      self.supported_cardtypes = [:visa, :master, :american_express, :discover, :jcb, :diners_club, :maestro]
+ #     self.supported_cardtypes = [:visa, :master, :american_express, :discover, :jcb, :diners_club, :maestro]
+      self.supported_cardtypes = [:visa, :master, :american_express]
       self.homepage_url = 'https://paycertify.com'
       self.default_currency = 'USD'
       self.display_name = 'PayCertify'
@@ -39,21 +40,21 @@ module ActiveMerchant #:nodoc:
 
       def capture(amount, authorization, options={})
         post = {transaction_id: authorization}
-        add_amount(amount)
+        add_amount(post, amount)
 
         commit(:capture, post)
       end
 
       def void(authorization, options={})
         post = {transaction_id: authorization}
-        add_amount(amount)
+        add_amount(post, amount)
 
         commit(:void, post)
       end
 
       def refund(amount, authorization, options={})
         post = {transaction_id: authorization}
-        add_amount(amount)
+        add_amount(post, amount)
 
         commit(:refund, post)
       end
