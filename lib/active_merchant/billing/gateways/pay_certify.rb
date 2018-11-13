@@ -39,34 +39,34 @@ module ActiveMerchant #:nodoc:
 
       def capture(amount, authorization, options={})
         post = {transaction_id: authorization}
-        post[:amount] = amount
+        add_amount(amount)
 
         commit(:capture, post)
       end
 
       def void(authorization, options={})
         post = {transaction_id: authorization}
-        post[:amount] = amount
+        add_amount(amount)
 
         commit(:void, post)
       end
 
       def refund(amount, authorization, options={})
         post = {transaction_id: authorization}
-        post[:amount] = amount
+        add_amount(amount)
 
         commit(:refund, post)
       end
 
       private
 
-        def add_amount(post, amount)
-          post[:amount] = amount
+        def add_amount(post, money)
+          post[:amount] = amount(money)
         end
 
         def add_invoice(post, money, options)
+          add_amount(post, money)
           post[:processor_id] = options[:custom_1] # optional
-          post[:amount]       = amount(money)
           post[:merchant_transaction_id] = options[:order_id].presence || options[:payment_id]
           post[:currency] = options[:currency] || currency(money)
           post[:dynamic_descriptor] = options[:statement_description]
