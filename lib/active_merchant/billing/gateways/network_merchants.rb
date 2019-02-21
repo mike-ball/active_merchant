@@ -43,6 +43,15 @@ module ActiveMerchant #:nodoc:
         commit('refund', post)
       end
 
+      def credit(money, transaction_id, options = {})
+        if transaction_id.present?
+          refund(money, transaction_id, options)
+        else
+          post = build_credit_post(money, options)
+          commit('credit', post)
+        end
+      end
+
       def store(creditcard, options = {})
         post = build_store_post(creditcard, options)
         commit_vault('add_customer', post)
@@ -99,6 +108,13 @@ module ActiveMerchant #:nodoc:
         post = {}
         post[:transactionid] = authorization
         add_amount(post, money, options)
+        post
+      end
+
+      def build_credit_post(money, credit_card, options)
+        post = {}
+        add_amount(post, money, options)
+        add_credit_card(post, options)
         post
       end
 
@@ -201,6 +217,19 @@ module ActiveMerchant #:nodoc:
       def add_amount(post, money, options)
         post[:currency] = options[:currency] || currency(money)
         post[:amount] = amount(money)
+      end
+
+      def add_credit_card(post, options)
+        credit_card = CreditCard.new( number: options[:card_number],
+                                      month:  options[:expiration_month],
+                                      year:   options[:expiration_year],
+                                      first_name: options[:first_name],
+                                      last_name:  options[:last_name])
+        post[:ccnumber]  = credit_card.number
+        post[:ccexp]     = expdate(credit_card)
+        post[:firstname] = credit_card.first_name
+        post[:lastname]  = credit_card.last_name
+        post[:cvv]       = credit_card.verification_value
       end
 
       def commit_vault(action, parameters)
