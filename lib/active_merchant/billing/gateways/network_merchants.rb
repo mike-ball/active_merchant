@@ -111,7 +111,7 @@ module ActiveMerchant #:nodoc:
         post
       end
 
-      def build_credit_post(money, credit_card, options)
+      def build_credit_post(money, options)
         post = {}
         add_amount(post, money, options)
         add_credit_card(post, options)
