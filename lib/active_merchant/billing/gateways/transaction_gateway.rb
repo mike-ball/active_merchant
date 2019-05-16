@@ -137,12 +137,12 @@ module ActiveMerchant #:nodoc:
           raw_response = ssl_post(live_url, post.to_param)
           response = parse(raw_response)
 
-          ActiveMerchant.logger.debug "============================="
-          ActiveMerchant.logger.debug raw_response.inspect
-          ActiveMerchant.logger.debug "============================="
-          ActiveMerchant.logger.debug response.inspect
-          ActiveMerchant.logger.debug "============================="
-          ActiveMerchant.logger.debug "Done with ActiveMerchant logging"
+          # ActiveMerchant.logger.debug "============================="
+          # ActiveMerchant.logger.debug raw_response.inspect
+          # ActiveMerchant.logger.debug "============================="
+          # ActiveMerchant.logger.debug response.inspect
+          # ActiveMerchant.logger.debug "============================="
+          # ActiveMerchant.logger.debug "Done with ActiveMerchant logging"
 
           success     = response[:response] == '1'
 
